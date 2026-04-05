@@ -490,7 +490,7 @@ async function main(): Promise<void> {
     githubToken,
     // The Copilot CLI is installed globally in the container (npm install -g @github/copilot).
     // We must tell the SDK where to find it since it's not a local dependency.
-    cliPath: 'copilot',
+    cliPath: '/usr/local/bin/copilot',
   });
 
   let session: CopilotSession;

@@ -29,6 +29,11 @@ vi.mock('grammy', () => {
   return { Bot: MockBot };
 });
 
+// --- env mock ---
+vi.mock('../env.js', () => ({
+  readEnvFile: vi.fn().mockReturnValue({}),
+}));
+
 // Must import AFTER mocks are defined
 import { getChannelFactory, getRegisteredChannelNames } from './registry.js';
 import './telegram.js';
@@ -179,7 +184,12 @@ describe('telegram channel', () => {
     it('message:text handler calls onChatMetadata', () => {
       const { opts } = createChannel();
       const ctx = {
-        message: { message_id: 1, text: 'hi', date: 1700000000, reply_to_message: undefined },
+        message: {
+          message_id: 1,
+          text: 'hi',
+          date: 1700000000,
+          reply_to_message: undefined,
+        },
         chat: { id: -100999, type: 'group', title: 'My Group' },
         from: { id: 1, first_name: 'User', last_name: undefined },
       };

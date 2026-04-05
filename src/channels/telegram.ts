@@ -2,6 +2,7 @@ import { Bot } from 'grammy';
 import type { Channel, NewMessage } from '../types.js';
 import { registerChannel } from './registry.js';
 import type { ChannelOpts } from './registry.js';
+import { readEnvFile } from '../env.js';
 import { logger } from '../logger.js';
 
 const MAX_MESSAGE_LENGTH = 4096;
@@ -33,12 +34,12 @@ class TelegramChannel implements Channel {
 
       const chatName =
         ctx.chat.type === 'private'
-          ? ctx.from?.first_name ?? 'DM'
-          : (ctx.chat as { title?: string }).title ?? 'Unknown Group';
+          ? (ctx.from?.first_name ?? 'DM')
+          : ((ctx.chat as { title?: string }).title ?? 'Unknown Group');
 
-      const senderName = [ctx.from?.first_name, ctx.from?.last_name]
-        .filter(Boolean)
-        .join(' ') || 'Unknown';
+      const senderName =
+        [ctx.from?.first_name, ctx.from?.last_name].filter(Boolean).join(' ') ||
+        'Unknown';
 
       const newMessage: NewMessage = {
         id: String(msg.message_id),
@@ -57,14 +58,23 @@ class TelegramChannel implements Channel {
             ? (msg.reply_to_message.text as string | undefined)
             : undefined,
         reply_to_sender_name: msg.reply_to_message?.from
-          ? [msg.reply_to_message.from.first_name, msg.reply_to_message.from.last_name]
+          ? [
+              msg.reply_to_message.from.first_name,
+              msg.reply_to_message.from.last_name,
+            ]
               .filter(Boolean)
               .join(' ') || undefined
           : undefined,
       };
 
       const isGroup = ctx.chat.type !== 'private';
-      this.opts.onChatMetadata(jid, newMessage.timestamp, chatName, 'telegram', isGroup);
+      this.opts.onChatMetadata(
+        jid,
+        newMessage.timestamp,
+        chatName,
+        'telegram',
+        isGroup,
+      );
       this.opts.onMessage(jid, newMessage);
     });
 
@@ -126,7 +136,8 @@ function splitMessage(text: string): string[] {
 }
 
 registerChannel('telegram', (opts: ChannelOpts) => {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const envConfig = readEnvFile(['TELEGRAM_BOT_TOKEN']);
+  const token = process.env.TELEGRAM_BOT_TOKEN || envConfig.TELEGRAM_BOT_TOKEN;
   if (!token) return null;
   return new TelegramChannel(token, opts);
 });
